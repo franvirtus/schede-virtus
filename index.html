@@ -292,6 +292,21 @@ async function postNota(clienteId, workoutItemId, nota) {
     nota_utente: nota
   };
 
+  // ✅ NIENTE headers: evita il preflight CORS
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    body: JSON.stringify(payload) // verrà inviato come text/plain
+  });
+
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || !json.ok) {
+    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
+    throw new Error(err);
+  }
+  return true;
+}
+
+
   const res = await fetch(API_BASE, {
     method: "POST",
     headers: { "Content-Type":"application/json" },
@@ -483,3 +498,4 @@ load();
 </script>
 </body>
 </html>
+
