@@ -213,6 +213,8 @@
     </div>
 
     <div id="status" class="status"></div>
+    <div id="debug" class="status" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace;"></div>
+
 
     <div class="divider"></div>
 
@@ -249,6 +251,10 @@ function setStatus(msg, kind="") {
   el.className = "status " + (kind ? kind : "");
   el.innerHTML = msg || "";
 }
+function setDebug(msg) {
+  const el = document.getElementById("debug");
+  if (el) el.textContent = msg || "";
+}
 
 function groupByDay(rows) {
   const by = {};
@@ -273,7 +279,8 @@ async function fetchScheda(clienteId, settimana) {
   url.searchParams.set("token", TOKEN);
   url.searchParams.set("cliente_id", clienteId);
   url.searchParams.set("settimana", settimana);
-
+  
+  setDebug("GET: " + url.toString());
   const res = await fetch(url.toString(), { cache: "no-store" });
   const json = await res.json().catch(() => null);
 
@@ -291,6 +298,21 @@ async function postNota(clienteId, workoutItemId, nota) {
     workout_item_id: workoutItemId,
     nota_utente: nota
   };
+
+  // NIENTE headers → evita CORS preflight
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || !json.ok) {
+    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
+    throw new Error(err);
+  }
+  return true;
+}
+
 
   // ✅ NIENTE headers: evita il preflight CORS
   const res = await fetch(API_BASE, {
@@ -498,4 +520,5 @@ load();
 </script>
 </body>
 </html>
+
 
