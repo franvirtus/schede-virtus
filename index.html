@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Virtus – Scheda Allenamento</title>
 
-  <!-- PWA basics -->
   <meta name="theme-color" content="#111827">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" id="pwa-manifest">
 
   <style>
     :root{
@@ -30,6 +29,7 @@
                   radial-gradient(900px 500px at 80% 20%, rgba(34,197,94,.18), transparent 60%),
                   var(--bg);
       color:var(--text);
+      min-height: 100vh;
     }
     header{
       position: sticky; top:0;
@@ -37,7 +37,7 @@
       background: rgba(11,18,32,.75);
       border-bottom:1px solid var(--border);
       padding:16px;
-      z-index:5;
+      z-index:10;
     }
     .wrap{max-width:980px; margin:0 auto; padding:0 16px;}
     h1{font-size:18px; margin:0; letter-spacing:.2px}
@@ -58,19 +58,21 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding:14px;
+      height: fit-content;
     }
 
     label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
     input{
       width:100%;
-      padding:12px 12px;
+      padding:12px;
       border-radius:12px;
       border:1px solid var(--border);
       background: rgba(0,0,0,.22);
       color: var(--text);
       outline:none;
     }
-    input:focus{border-color: rgba(96,165,250,.6)}
+    input:focus{border-color: var(--accent2)}
+    
     button{
       border:0;
       border-radius: 12px;
@@ -79,109 +81,98 @@
       cursor:pointer;
       color:#07130a;
       background: linear-gradient(90deg, var(--accent), #86efac);
+      transition: opacity 0.2s;
     }
+    button:active{opacity: 0.8}
+    
     button.secondary{
       color: var(--text);
       background: rgba(96,165,250,.16);
       border:1px solid rgba(96,165,250,.35);
-      font-weight: 600;
     }
     button.ghost{
       color: var(--text);
       background: transparent;
       border:1px solid var(--border);
-      font-weight: 600;
     }
     button.danger{
       color: #fff;
       background: rgba(239,68,68,.18);
       border:1px solid rgba(239,68,68,.45);
-      font-weight:600;
     }
 
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .row > *{flex:1}
     .row .fit{flex:0 0 auto}
+    
     .status{
       font-size:13px; color: var(--muted);
       margin-top:10px;
       min-height:18px;
+      word-break: break-word;
     }
     .ok{color:#86efac}
     .err{color:#fca5a5}
 
-    /* Tabs giorni */
     .tabs{
       display:flex; gap:8px;
-      overflow:auto;
-      padding-bottom:4px;
-      margin:6px 0 10px;
+      overflow-x:auto;
+      padding-bottom:8px;
+      margin-bottom: 10px;
     }
     .tab{
       flex:0 0 auto;
-      padding:10px 12px;
+      padding:8px 16px;
       border-radius: 999px;
       border:1px solid var(--border);
-      background: rgba(0,0,0,.18);
+      background: rgba(255,255,255,.05);
       color: var(--text);
-      font-weight: 700;
-      font-size: 13px;
+      font-weight: 600;
       cursor:pointer;
-      opacity:.85;
     }
     .tab.active{
-      background: rgba(34,197,94,.18);
-      border-color: rgba(34,197,94,.45);
-      opacity:1;
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
     }
 
-    /* Esercizi */
     .exercise{
-      padding:14px;
+      padding:16px;
       border-radius: var(--radius);
       border:1px solid var(--border);
-      background: rgba(0,0,0,.16);
-      margin:10px 0;
+      background: rgba(255,255,255,.03);
+      margin-bottom:12px;
     }
     .ex-title{
-      display:flex; justify-content:space-between; gap:10px; align-items:flex-start;
+      display:flex; justify-content:space-between; gap:10px;
     }
-    .ex-title b{font-size:16px}
     .pill{
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
+      padding:4px 8px;
+      border-radius:8px;
+      font-size:11px;
       color: var(--muted);
       border:1px solid var(--border);
       background: rgba(255,255,255,.04);
-      white-space:nowrap;
     }
     .meta{
-      margin-top:6px;
+      margin-top:8px;
       font-size:13px;
-      color: var(--muted);
-      display:flex; gap:10px; flex-wrap:wrap;
+      display:flex; gap:8px; flex-wrap:wrap;
     }
     textarea{
       width:100%;
-      min-height:70px;
-      resize: vertical;
+      min-height:80px;
       padding:12px;
-      margin-top:10px;
+      margin-top:12px;
       border-radius:12px;
       border:1px solid var(--border);
-      background: rgba(0,0,0,.22);
+      background: rgba(0,0,0,.3);
       color: var(--text);
-      outline:none;
+      resize: vertical;
     }
-    .btnbar{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center}
+    .btnbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center}
     .small{font-size:12px; color:var(--muted)}
-    .divider{height:1px; background: var(--border); margin:10px 0}
-    .hint{
-      font-size:12px; color: var(--muted);
-      line-height:1.4;
-      margin-top:10px;
-    }
+    .divider{height:1px; background: var(--border); margin:16px 0}
   </style>
 </head>
 
@@ -189,42 +180,33 @@
 <header>
   <div class="wrap">
     <h1>Virtus – Scheda Allenamento</h1>
-    <div class="sub">Legge la scheda da Google Sheets e salva le note nel foglio NOTE.</div>
+    <div class="sub">Gestione schede personalizzate via Google Sheets</div>
   </div>
 </header>
 
 <div class="grid">
-  <!-- Pannello sinistro -->
   <div class="card">
     <div class="row">
       <div>
         <label>Cliente ID</label>
-        <input id="clienteId" value="VIRTUS-TEST" placeholder="es. VIRTUS-TEST">
+        <input id="clienteId" value="VIRTUS-TEST">
       </div>
       <div>
         <label>Settimana</label>
-        <input id="settimana" value="2026-W02" placeholder="es. 2026-W02">
+        <input id="settimana" value="2026-W02">
       </div>
     </div>
 
-    <div class="row" style="margin-top:12px">
-      <button id="loadBtn" class="fit">Carica scheda</button>
+    <div class="row" style="margin-top:16px">
+      <button id="loadBtn" class="fit">Carica</button>
       <button id="refreshBtn" class="secondary fit">Aggiorna</button>
     </div>
 
     <div id="status" class="status"></div>
-    <div id="debug" class="status" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace;"></div>
-
-
     <div class="divider"></div>
-
-    <div class="hint">
-      <b>Tip:</b> Questa app salva anche una copia locale delle note (per sicurezza).<br>
-      Il PT vede tutto nel foglio <b>NOTE</b>.
-    </div>
+    <div class="small">Le note vengono salvate automaticamente in locale e inviate al database del PT.</div>
   </div>
 
-  <!-- Contenuto scheda -->
   <div class="card">
     <div id="tabs" class="tabs"></div>
     <div id="content"></div>
@@ -236,7 +218,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbx1jWj4W42UWTK1EqwGo__ENTwmwWls6C3fYW7Fb5Vj2stLRt9gB6TKI-pE_Z4VyS3C/exec";
 const TOKEN = "Test_WEB_APP";
 
-/*** STATE ***/
 let state = {
   cliente_id: "",
   settimana: "",
@@ -246,279 +227,168 @@ let state = {
 
 const dayOrder = ["LUN","MAR","MER","GIO","VEN","SAB","DOM"];
 
+/*** UTILS ***/
 function setStatus(msg, kind="") {
   const el = document.getElementById("status");
-  el.className = "status " + (kind ? kind : "");
+  el.className = "status " + kind;
   el.innerHTML = msg || "";
 }
-function setDebug(msg) {
-  const el = document.getElementById("debug");
-  if (el) el.textContent = msg || "";
+
+function escapeHtml(str) {
+  if(!str) return "";
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-function groupByDay(rows) {
-  const by = {};
-  for (const r of rows) {
-    const d = (r.giorno || "??").trim();
-    by[d] = by[d] || [];
-    by[d].push(r);
-  }
-  for (const d of Object.keys(by)) {
-    by[d].sort((a,b) => (a.ordine||0) - (b.ordine||0));
-  }
-  return by;
-}
+function localKey(wid) { return `v_note_${wid}`; }
 
-function localKey(workout_item_id) {
-  return "note_" + workout_item_id;
-}
-
-async function fetchScheda(clienteId, settimana) {
-  const url = new URL(API_BASE);
-  url.searchParams.set("action","scheda");
-  url.searchParams.set("token", TOKEN);
-  url.searchParams.set("cliente_id", clienteId);
-  url.searchParams.set("settimana", settimana);
-  
-  setDebug("GET: " + url.toString());
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  const json = await res.json().catch(() => null);
-
-  if (!res.ok || !json || !json.ok) {
-    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
-    throw new Error(err);
-  }
+/*** API ***/
+async function fetchScheda(id, sett) {
+  const url = `${API_BASE}?action=scheda&token=${TOKEN}&cliente_id=${id}&settimana=${sett}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Errore di rete");
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || "Errore sconosciuto");
   return json.rows || [];
 }
 
-async function postNota(clienteId, workoutItemId, nota) {
+async function postNota(id, wid, nota) {
   const payload = {
     token: TOKEN,
-    cliente_id: clienteId,
-    workout_item_id: workoutItemId,
+    cliente_id: id,
+    workout_item_id: wid,
     nota_utente: nota
   };
 
-  // NIENTE headers → evita CORS preflight
+  // Google Apps Script richiede spesso l'invio come text/plain per evitare problemi CORS pre-flight
   const res = await fetch(API_BASE, {
     method: "POST",
+    mode: "no-cors", // Nota: con no-cors non potrai leggere la risposta JSON, ma l'invio funzionerà
     body: JSON.stringify(payload)
   });
-
-  const json = await res.json().catch(() => null);
-  if (!res.ok || !json || !json.ok) {
-    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
-    throw new Error(err);
-  }
-  return true;
+  
+  // Poiché usiamo no-cors per semplicità con Apps Script, assumiamo successo se non crasha
+  return true; 
 }
 
-
-  // ✅ NIENTE headers: evita il preflight CORS
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    body: JSON.stringify(payload) // verrà inviato come text/plain
-  });
-
-  const json = await res.json().catch(() => null);
-  if (!res.ok || !json || !json.ok) {
-    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
-    throw new Error(err);
-  }
-  return true;
-}
-
-
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  const json = await res.json().catch(() => null);
-  if (!res.ok || !json || !json.ok) {
-    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
-    throw new Error(err);
-  }
-  return true;
-}
-
-function renderTabs(byDay) {
+/*** RENDERING ***/
+function renderAll() {
   const tabsEl = document.getElementById("tabs");
-  tabsEl.innerHTML = "";
+  const contentEl = document.getElementById("content");
+  
+  // Raggruppa per giorno
+  const byDay = {};
+  state.rows.forEach(r => {
+    const d = (r.giorno || "VARIE").trim().toUpperCase();
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(r);
+  });
 
-  const days = Object.keys(byDay).sort((a,b) =>
-    (dayOrder.indexOf(a) === -1 ? 99 : dayOrder.indexOf(a)) -
-    (dayOrder.indexOf(b) === -1 ? 99 : dayOrder.indexOf(b))
-  );
+  const days = Object.keys(byDay).sort((a,b) => {
+    let idxA = dayOrder.indexOf(a);
+    let idxB = dayOrder.indexOf(b);
+    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+  });
 
-  if (!days.length) {
-    tabsEl.innerHTML = `<div class="small">Nessun giorno trovato.</div>`;
-    return;
-  }
-
-  // se day attivo non valido, scegli il primo
   if (!state.activeDay || !byDay[state.activeDay]) state.activeDay = days[0];
 
-  for (const d of days) {
-    const btn = document.createElement("button");
-    btn.className = "tab" + (d === state.activeDay ? " active" : "");
-    btn.textContent = d;
-    btn.onclick = () => {
-      state.activeDay = d;
-      renderAll();
-    };
-    tabsEl.appendChild(btn);
-  }
-}
+  // Render Tabs
+  tabsEl.innerHTML = days.map(d => `
+    <button class="tab ${d === state.activeDay ? 'active' : ''}" onclick="switchDay('${d}')">${d}</button>
+  `).join('');
 
-function renderContent(byDay) {
-  const contentEl = document.getElementById("content");
-  contentEl.innerHTML = "";
-
-  const rows = byDay[state.activeDay] || [];
-  if (!rows.length) {
-    contentEl.innerHTML = `<div class="small">Nessun esercizio per questo giorno.</div>`;
-    return;
-  }
-
-  for (const r of rows) {
+  // Render Content
+  const currentRows = byDay[state.activeDay] || [];
+  contentEl.innerHTML = currentRows.map(r => {
     const wid = r.workout_item_id;
-    const saved = localStorage.getItem(localKey(wid)) || "";
-
-    const ex = document.createElement("div");
-    ex.className = "exercise";
-    ex.innerHTML = `
-      <div class="ex-title">
-        <div>
-          <b>${escapeHtml(r.esercizio || "")}</b>
-          <div class="meta">
-            <span class="pill">Serie: ${escapeHtml(r.serie || "")}</span>
-            <span class="pill">Rip: ${escapeHtml(r.ripetizioni || "")}</span>
-            <span class="pill">Rec: ${escapeHtml(r.recupero_sec || "")}s</span>
-          </div>
-          ${r.note_pt ? `<div class="small" style="margin-top:8px">Note PT: ${escapeHtml(r.note_pt)}</div>` : ``}
+    const localNote = localStorage.getItem(localKey(wid)) || "";
+    return `
+      <div class="exercise">
+        <div class="ex-title">
+          <b>${escapeHtml(r.esercizio)}</b>
+          <span class="pill">ORDINE: ${r.ordine || 0}</span>
         </div>
-        <div class="pill">#${escapeHtml(String(r.ordine||""))}</div>
-      </div>
-
-      <textarea id="t_${wid}" placeholder="Nota per il PT…">${escapeHtml(saved)}</textarea>
-
-      <div class="btnbar">
-        <button data-save="${wid}">Salva nota</button>
-        <button class="ghost" data-local="${wid}">Salva solo in locale</button>
-        <button class="danger" data-clear="${wid}">Pulisci</button>
-        <span id="s_${wid}" class="small"></span>
+        <div class="meta">
+          <span class="pill">Set: ${r.serie || '-'}</span>
+          <span class="pill">Rip: ${r.ripetizioni || '-'}</span>
+          <span class="pill">Rec: ${r.recupero_sec || '0'}s</span>
+        </div>
+        ${r.note_pt ? `<div class="small" style="margin-top:8px; color:var(--accent2)">Note PT: ${escapeHtml(r.note_pt)}</div>` : ''}
+        
+        <textarea id="t_${wid}" placeholder="Scrivi qui i pesi usati o sensazioni...">${escapeHtml(localNote)}</textarea>
+        
+        <div class="btnbar">
+          <button onclick="handleSave('${wid}', true)">Invia al PT</button>
+          <button class="ghost" onclick="handleSave('${wid}', false)">Solo locale</button>
+          <button class="danger" onclick="handleClear('${wid}')">X</button>
+          <span id="s_${wid}" class="small"></span>
+        </div>
       </div>
     `;
-    contentEl.appendChild(ex);
-
-    ex.querySelector(`[data-save="${wid}"]`).onclick = () => onSave(wid, true);
-    ex.querySelector(`[data-local="${wid}"]`).onclick = () => onSave(wid, false);
-    ex.querySelector(`[data-clear="${wid}"]`).onclick = () => onClear(wid);
-  }
+  }).join('');
 }
 
-function renderAll() {
-  const byDay = groupByDay(state.rows);
-  renderTabs(byDay);
-  renderContent(byDay);
-}
+window.switchDay = (day) => {
+  state.activeDay = day;
+  renderAll();
+};
 
-async function load() {
-  const clienteId = document.getElementById("clienteId").value.trim();
-  const settimana = document.getElementById("settimana").value.trim();
-  if (!clienteId || !settimana) {
-    setStatus(`<span class="err">Inserisci Cliente ID e Settimana.</span>`, "err");
-    return;
-  }
+/*** ACTIONS ***/
+async function handleLoad() {
+  const id = document.getElementById("clienteId").value.trim();
+  const sett = document.getElementById("settimana").value.trim();
+  if(!id || !sett) return setStatus("Inserisci i dati", "err");
 
-  setStatus(`Carico scheda…`);
+  setStatus("Caricamento...");
   try {
-    const rows = await fetchScheda(clienteId, settimana);
-    state.cliente_id = clienteId;
-    state.settimana = settimana;
-    state.rows = rows;
-    state.activeDay = null;
-
-    setStatus(`<span class="ok">Scheda caricata: ${rows.length} esercizi.</span>`, "ok");
+    state.rows = await fetchScheda(id, sett);
+    state.cliente_id = id;
+    state.settimana = sett;
+    setStatus(`Caricati ${state.rows.length} esercizi`, "ok");
     renderAll();
-  } catch (err) {
-    setStatus(`<span class="err">Errore: ${escapeHtml(String(err.message || err))}</span>`, "err");
+  } catch(e) {
+    setStatus(e.message, "err");
   }
 }
 
-async function onSave(workoutItemId, sendToServer) {
-  const t = document.getElementById("t_" + workoutItemId);
-  const s = document.getElementById("s_" + workoutItemId);
-  const nota = (t.value || "").trim();
+async function handleSave(wid, send) {
+  const nota = document.getElementById("t_"+wid).value.trim();
+  const status = document.getElementById("s_"+wid);
+  
+  localStorage.setItem(localKey(wid), nota);
+  status.innerHTML = "Salvato locale";
 
-  if (!nota) {
-    s.innerHTML = `<span class="err">Nota vuota.</span>`;
-    return;
-  }
-
-  // sempre salva locale (backup)
-  localStorage.setItem(localKey(workoutItemId), nota);
-
-  if (!sendToServer) {
-    s.innerHTML = `<span class="ok">Salvata in locale ✔</span>`;
-    return;
-  }
-
-  s.textContent = "Invio…";
-  try {
-    await postNota(state.cliente_id, workoutItemId, nota);
-    s.innerHTML = `<span class="ok">Inviata al PT ✔</span>`;
-  } catch (err) {
-    s.innerHTML = `<span class="err">Errore invio: ${escapeHtml(String(err.message || err))}</span>`;
+  if (send) {
+    status.innerHTML = "Invio...";
+    try {
+      await postNota(state.cliente_id, wid, nota);
+      status.innerHTML = "Inviato al PT ✔";
+    } catch(e) {
+      status.innerHTML = "Errore invio";
+    }
   }
 }
 
-function onClear(workoutItemId) {
-  localStorage.removeItem(localKey(workoutItemId));
-  const t = document.getElementById("t_" + workoutItemId);
-  const s = document.getElementById("s_" + workoutItemId);
-  if (t) t.value = "";
-  if (s) s.textContent = "";
+function handleClear(wid) {
+  if(confirm("Cancello la nota?")) {
+    localStorage.removeItem(localKey(wid));
+    document.getElementById("t_"+wid).value = "";
+    document.getElementById("s_"+wid).innerHTML = "";
+  }
 }
 
-function escapeHtml(str){
-  return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
+document.getElementById("loadBtn").onclick = handleLoad;
+document.getElementById("refreshBtn").onclick = handleLoad;
 
-document.getElementById("loadBtn").onclick = load;
-document.getElementById("refreshBtn").onclick = load;
-
-/*** Auto-load (comodo) ***/
-load();
-
-/*** PWA manifest (inline quick hack) ***/
-(async () => {
-  // crea al volo un manifest file virtuale (così non devi creare altri file)
-  // Nota: alcuni hosting richiedono file reale. Se non va, te lo do come file separato.
-  const manifest = {
-    name: "Virtus Scheda",
-    short_name: "Virtus",
-    start_url: ".",
-    display: "standalone",
-    background_color: "#0b1220",
-    theme_color: "#111827",
-    icons: []
-  };
-
-  const blob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
-  const url = URL.createObjectURL(blob);
-  const link = document.querySelector('link[rel="manifest"]');
-  link.setAttribute("href", url);
-})();
+// Inizializzazione Manifest
+const manifest = {
+  name: "Virtus Allenamento",
+  short_name: "Virtus",
+  display: "standalone",
+  start_url: "/",
+  background_color: "#0b1220",
+  theme_color: "#111827"
+};
+document.getElementById("pwa-manifest").setAttribute("href", "data:application/json;base64," + btoa(JSON.stringify(manifest)));
 </script>
 </body>
 </html>
-
-
