@@ -252,12 +252,28 @@ async function fetchScheda(id, sett) {
 }
 
 async function postNota(id, wid, nota) {
-  const payload = {
-    token: TOKEN,
-    cliente_id: id,
-    workout_item_id: wid,
-    nota_utente: nota
-  };
+  // invio come form-urlencoded: è la cosa più compatibile e stabile con Apps Script
+  const form = new URLSearchParams();
+  form.set("token", TOKEN);
+  form.set("cliente_id", id);
+  form.set("workout_item_id", wid);
+  form.set("nota_utente", nota);
+
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: form.toString()
+  });
+
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || !json.ok) {
+    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
+    throw new Error(err);
+  }
+
+  return true;
+}
+
 
   // Google Apps Script richiede spesso l'invio come text/plain per evitare problemi CORS pre-flight
   const res = await fetch(API_BASE, {
@@ -392,3 +408,4 @@ document.getElementById("pwa-manifest").setAttribute("href", "data:application/j
 </script>
 </body>
 </html>
+
