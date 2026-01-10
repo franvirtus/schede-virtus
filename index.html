@@ -316,7 +316,7 @@ function renderAll() {
   const currentRows = byDay[state.activeDay] || [];
   contentEl.innerHTML = currentRows.map(r => {
     const wid = r.workout_item_id;
-    const localNote = localStorage.getItem(localKey(wid)) || "";
+    const localNote = "";
     return `
       <div class="exercise">
         <div class="ex-title">
@@ -408,4 +408,5 @@ document.getElementById("pwa-manifest").setAttribute("href", "data:application/j
 </script>
 </body>
 </html>
+
 
