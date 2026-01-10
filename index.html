@@ -236,7 +236,7 @@ function setStatus(msg, kind="") {
 
 function escapeHtml(str) {
   if(!str) return "";
-  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
 }
 
 function localKey(wid) { return `v_note_${wid}`; }
@@ -252,7 +252,6 @@ async function fetchScheda(id, sett) {
 }
 
 async function postNota(id, wid, nota) {
-  // invio come form-urlencoded: è la cosa più compatibile e stabile con Apps Script
   const form = new URLSearchParams();
   form.set("token", TOKEN);
   form.set("cliente_id", id);
@@ -265,7 +264,13 @@ async function postNota(id, wid, nota) {
     body: form.toString()
   });
 
-  const json = await res.json().catch(() => null);
+  let json = null;
+  try {
+    json = await res.json();
+  } catch(e) {
+    throw new Error("Risposta non valida dal server");
+  }
+
   if (!res.ok || !json || !json.ok) {
     const err = (json && json.error) ? json.error : ("HTTP " + res.status);
     throw new Error(err);
@@ -274,24 +279,11 @@ async function postNota(id, wid, nota) {
   return true;
 }
 
-
-  // Google Apps Script richiede spesso l'invio come text/plain per evitare problemi CORS pre-flight
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    mode: "no-cors", // Nota: con no-cors non potrai leggere la risposta JSON, ma l'invio funzionerà
-    body: JSON.stringify(payload)
-  });
-  
-  // Poiché usiamo no-cors per semplicità con Apps Script, assumiamo successo se non crasha
-  return true; 
-}
-
 /*** RENDERING ***/
 function renderAll() {
   const tabsEl = document.getElementById("tabs");
   const contentEl = document.getElementById("content");
   
-  // Raggruppa per giorno
   const byDay = {};
   state.rows.forEach(r => {
     const d = (r.giorno || "VARIE").trim().toUpperCase();
@@ -307,16 +299,14 @@ function renderAll() {
 
   if (!state.activeDay || !byDay[state.activeDay]) state.activeDay = days[0];
 
-  // Render Tabs
   tabsEl.innerHTML = days.map(d => `
     <button class="tab ${d === state.activeDay ? 'active' : ''}" onclick="switchDay('${d}')">${d}</button>
   `).join('');
 
-  // Render Content
   const currentRows = byDay[state.activeDay] || [];
   contentEl.innerHTML = currentRows.map(r => {
     const wid = r.workout_item_id;
-    const localNote = "";
+    const localNote = localStorage.getItem(localKey(wid)) || "";
     return `
       <div class="exercise">
         <div class="ex-title">
@@ -362,23 +352,31 @@ async function handleLoad() {
     setStatus(`Caricati ${state.rows.length} esercizi`, "ok");
     renderAll();
   } catch(e) {
+    console.error(e);
     setStatus(e.message, "err");
   }
 }
 
 async function handleSave(wid, send) {
-  const nota = document.getElementById("t_"+wid).value.trim();
+  const txt = document.getElementById("t_"+wid);
+  if (!txt) return;
+  const nota = txt.value.trim();
   const status = document.getElementById("s_"+wid);
   
   localStorage.setItem(localKey(wid), nota);
   status.innerHTML = "Salvato locale";
 
   if (send) {
+    if (!state.cliente_id) {
+      status.innerHTML = "Carica prima la scheda";
+      return;
+    }
     status.innerHTML = "Invio...";
     try {
       await postNota(state.cliente_id, wid, nota);
       status.innerHTML = "Inviato al PT ✔";
     } catch(e) {
+      console.error(e);
       status.innerHTML = "Errore invio";
     }
   }
@@ -387,8 +385,10 @@ async function handleSave(wid, send) {
 function handleClear(wid) {
   if(confirm("Cancello la nota?")) {
     localStorage.removeItem(localKey(wid));
-    document.getElementById("t_"+wid).value = "";
-    document.getElementById("s_"+wid).innerHTML = "";
+    const t = document.getElementById("t_"+wid);
+    if (t) t.value = "";
+    const s = document.getElementById("s_"+wid);
+    if (s) s.innerHTML = "";
   }
 }
 
@@ -404,9 +404,10 @@ const manifest = {
   background_color: "#0b1220",
   theme_color: "#111827"
 };
-document.getElementById("pwa-manifest").setAttribute("href", "data:application/json;base64," + btoa(JSON.stringify(manifest)));
+document.getElementById("pwa-manifest").setAttribute(
+  "href",
+  "data:application/json;base64," + btoa(JSON.stringify(manifest))
+);
 </script>
 </body>
 </html>
-
-
