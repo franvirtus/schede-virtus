@@ -1,1 +1,420 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Virtus – Scheda Allenamento</title>
+
+  <meta name="theme-color" content="#111827">
+  <link rel="manifest" id="pwa-manifest">
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#111a2e;
+      --muted:#9ca3af;
+      --text:#e5e7eb;
+      --accent:#22c55e;
+      --accent2:#60a5fa;
+      --danger:#ef4444;
+      --border:rgba(255,255,255,.08);
+      --shadow: 0 8px 25px rgba(0,0,0,.35);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(96,165,250,.25), transparent 60%),
+                  radial-gradient(900px 500px at 80% 20%, rgba(34,197,94,.18), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      min-height: 100vh;
+    }
+    header{
+      position: sticky; top:0;
+      backdrop-filter: blur(10px);
+      background: rgba(11,18,32,.75);
+      border-bottom:1px solid var(--border);
+      padding:16px;
+      z-index:10;
+    }
+    .wrap{max-width:980px; margin:0 auto; padding:0 16px;}
+    h1{font-size:18px; margin:0; letter-spacing:.2px}
+    .sub{font-size:13px; color:var(--muted); margin-top:4px}
+
+    .grid{
+      max-width:980px; margin:0 auto; padding:16px;
+      display:grid; gap:14px;
+      grid-template-columns: 1fr;
+    }
+    @media(min-width:860px){
+      .grid{grid-template-columns: 340px 1fr}
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:14px;
+      height: fit-content;
+    }
+
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    input{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+    }
+    input:focus{border-color: var(--accent2)}
+
+    button{
+      border:0;
+      border-radius: 12px;
+      padding:12px 14px;
+      font-weight: 700;
+      cursor:pointer;
+      color:#07130a;
+      background: linear-gradient(90deg, var(--accent), #86efac);
+      transition: opacity 0.2s;
+    }
+    button:active{opacity: 0.8}
+
+    button.secondary{
+      color: var(--text);
+      background: rgba(96,165,250,.16);
+      border:1px solid rgba(96,165,250,.35);
+    }
+    button.ghost{
+      color: var(--text);
+      background: transparent;
+      border:1px solid var(--border);
+    }
+    button.danger{
+      color: #fff;
+      background: rgba(239,68,68,.18);
+      border:1px solid rgba(239,68,68,.45);
+    }
+
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .row > *{flex:1}
+    .row .fit{flex:0 0 auto}
+
+    .status{
+      font-size:13px; color: var(--muted);
+      margin-top:10px;
+      min-height:18px;
+      word-break: break-word;
+    }
+    .ok{color:#86efac}
+    .err{color:#fca5a5}
+
+    .tabs{
+      display:flex; gap:8px;
+      overflow-x:auto;
+      padding-bottom:8px;
+      margin-bottom: 10px;
+    }
+    .tab{
+      flex:0 0 auto;
+      padding:8px 16px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font-weight: 600;
+      cursor:pointer;
+    }
+    .tab.active{
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .exercise{
+      padding:16px;
+      border-radius: var(--radius);
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      margin-bottom:12px;
+    }
+    .ex-title{
+      display:flex; justify-content:space-between; gap:10px;
+    }
+    .pill{
+      padding:4px 8px;
+      border-radius:8px;
+      font-size:11px;
+      color: var(--muted);
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+    }
+    .meta{
+      margin-top:8px;
+      font-size:13px;
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    textarea{
+      width:100%;
+      min-height:80px;
+      padding:12px;
+      margin-top:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.3);
+      color: var(--text);
+      resize: vertical;
+    }
+    .btnbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center}
+    .small{font-size:12px; color:var(--muted)}
+    .divider{height:1px; background: var(--border); margin:16px 0}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="wrap">
+    <h1>Virtus – Scheda Allenamento</h1>
+    <div class="sub">Gestione schede personalizzate via Google Sheets</div>
+  </div>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Cliente ID</label>
+        <input id="clienteId" value="VIRTUS-TEST">
+      </div>
+      <div>
+        <label>Settimana</label>
+        <input id="settimana" value="2026-W02">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:16px">
+      <button id="loadBtn" class="fit">Carica</button>
+      <button id="refreshBtn" class="secondary fit">Aggiorna</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div class="divider"></div>
+    <div class="small">Le note vengono inviate al PT e salvate con data/ora.</div>
+  </div>
+
+  <div class="card">
+    <div id="tabs" class="tabs"></div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<script>
+/*** CONFIG ***/
+const API_BASE = https://script.google.com/macros/s/AKfycbx1jWj4W42UWTK1EqwGo__ENTwmwWls6C3fYW7Fb5Vj2stLRt9gB6TKI-pE_Z4VyS3C/exec";
+const TOKEN = "Test_WEB_APP";
+
+let state = {
+  cliente_id: "",
+  settimana: "",
+  rows: [],
+  activeDay: null
+};
+
+const dayOrder = ["LUN","MAR","MER","GIO","VEN","SAB","DOM"];
+
+/*** UTILS ***/
+function setStatus(msg, kind="") {
+  const el = document.getElementById("status");
+  el.className = "status " + kind;
+  el.innerHTML = msg || "";
+}
+
+function escapeHtml(str) {
+  if(!str) return "";
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/*** API ***/
+async function fetchScheda(id, sett) {
+  const url = `${API_BASE}?action=scheda&token=${encodeURIComponent(TOKEN)}&cliente_id=${encodeURIComponent(id)}&settimana=${encodeURIComponent(sett)}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Errore di rete (GET)");
+  const json = await res.json().catch(() => null);
+  if (!json || !json.ok) throw new Error((json && json.error) ? json.error : "Risposta non valida");
+  return json.rows || [];
+}
+
+async function postNota(id, wid, nota) {
+  // invio come form-urlencoded: è la cosa più compatibile e stabile con Apps Script
+  const form = new URLSearchParams();
+  form.set("token", TOKEN);
+  form.set("cliente_id", id);
+  form.set("workout_item_id", wid);
+  form.set("nota_utente", nota);
+
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: form.toString()
+  });
+
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || !json.ok) {
+    const err = (json && json.error) ? json.error : ("HTTP " + res.status);
+    throw new Error(err);
+  }
+  return true;
+}
+
+/*** RENDERING ***/
+function renderAll() {
+  const tabsEl = document.getElementById("tabs");
+  const contentEl = document.getElementById("content");
+
+  const byDay = {};
+  state.rows.forEach(r => {
+    const d = (r.giorno || "VARIE").trim().toUpperCase();
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(r);
+  });
+
+  const days = Object.keys(byDay).sort((a,b) => {
+    let idxA = dayOrder.indexOf(a);
+    let idxB = dayOrder.indexOf(b);
+    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+  });
+
+  if (!days.length) {
+    tabsEl.innerHTML = "";
+    contentEl.innerHTML = `<div class="small">Nessun esercizio trovato. Controlla Cliente ID e Settimana.</div>`;
+    return;
+  }
+
+  if (!state.activeDay || !byDay[state.activeDay]) state.activeDay = days[0];
+
+  tabsEl.innerHTML = days.map(d => `
+    <button class="tab ${d === state.activeDay ? 'active' : ''}" data-day="${d}">${d}</button>
+  `).join("");
+
+  // bind tabs
+  tabsEl.querySelectorAll("button[data-day]").forEach(btn => {
+    btn.onclick = () => {
+      state.activeDay = btn.getAttribute("data-day");
+      renderAll();
+    };
+  });
+
+  const currentRows = byDay[state.activeDay] || [];
+
+  contentEl.innerHTML = currentRows.map(r => {
+    const wid = r.workout_item_id;
+
+    return `
+      <div class="exercise">
+        <div class="ex-title">
+          <b>${escapeHtml(r.esercizio)}</b>
+          <span class="pill">ORDINE: ${r.ordine || 0}</span>
+        </div>
+        <div class="meta">
+          <span class="pill">Set: ${escapeHtml(r.serie || '-')}</span>
+          <span class="pill">Rip: ${escapeHtml(r.ripetizioni || '-')}</span>
+          <span class="pill">Rec: ${escapeHtml(r.recupero_sec || '0')}s</span>
+        </div>
+        ${r.note_pt ? `<div class="small" style="margin-top:8px; color:var(--accent2)">Note PT: ${escapeHtml(r.note_pt)}</div>` : ''}
+
+        <!-- CAMPO SEMPRE VUOTO ALL’APERTURA -->
+        <textarea id="t_${wid}" placeholder="Scrivi qui i pesi usati o sensazioni..."></textarea>
+
+        <div class="btnbar">
+          <button class="send" data-wid="${wid}">Invia al PT</button>
+          <button class="danger clear" data-wid="${wid}">Pulisci</button>
+          <span id="s_${wid}" class="small"></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // bind buttons
+  contentEl.querySelectorAll("button.send").forEach(btn => {
+    btn.onclick = () => handleSave(btn.getAttribute("data-wid"));
+  });
+  contentEl.querySelectorAll("button.clear").forEach(btn => {
+    btn.onclick = () => handleClear(btn.getAttribute("data-wid"));
+  });
+}
+
+/*** ACTIONS ***/
+async function handleLoad() {
+  const id = document.getElementById("clienteId").value.trim();
+  const sett = document.getElementById("settimana").value.trim();
+  if(!id || !sett) return setStatus("Inserisci Cliente ID e Settimana", "err");
+
+  setStatus("Caricamento...");
+  try {
+    state.rows = await fetchScheda(id, sett);
+    state.cliente_id = id;
+    state.settimana = sett;
+    state.activeDay = null;
+    setStatus(`Caricati ${state.rows.length} esercizi`, "ok");
+    renderAll();
+  } catch(e) {
+    setStatus(escapeHtml(e.message || String(e)), "err");
+  }
+}
+
+async function handleSave(wid) {
+  const nota = document.getElementById("t_"+wid).value.trim();
+  const status = document.getElementById("s_"+wid);
+
+  if (!nota) {
+    status.innerHTML = `<span class="err">Scrivi qualcosa prima di inviare.</span>`;
+    return;
+  }
+
+  status.innerHTML = "Invio...";
+  try {
+    await postNota(state.cliente_id, wid, nota);
+    status.innerHTML = `<span class="ok">Inviato al PT ✔</span>`;
+    // dopo invio: svuota campo (UX “nota di oggi”)
+    document.getElementById("t_"+wid).value = "";
+  } catch(e) {
+    status.innerHTML = `<span class="err">Errore invio: ${escapeHtml(e.message || String(e))}</span>`;
+  }
+}
+
+function handleClear(wid) {
+  document.getElementById("t_"+wid).value = "";
+  document.getElementById("s_"+wid).innerHTML = "";
+}
+
+document.getElementById("loadBtn").onclick = handleLoad;
+document.getElementById("refreshBtn").onclick = handleLoad;
+
+// Manifest inline
+const manifest = {
+  name: "Virtus Allenamento",
+  short_name: "Virtus",
+  display: "standalone",
+  start_url: "./",
+  background_color: "#0b1220",
+  theme_color: "#111827"
+};
+document.getElementById("pwa-manifest").setAttribute(
+  "href",
+  "data:application/json;base64," + btoa(JSON.stringify(manifest))
+);
+</script>
+</body>
+</html>
+
+
+
+
+
+
 
