@@ -250,20 +250,26 @@ async function fetchScheda(id, sett) {
 }
 
 async function postNota(id, wid, nota) {
-  // invio come form-urlencoded: è la cosa più compatibile e stabile con Apps Script
-  const form = new URLSearchParams();
-  form.set("token", TOKEN);
-  form.set("cliente_id", id);
-  form.set("workout_item_id", wid);
-  form.set("nota_utente", nota);
-
+  const payload = {
+    token: TOKEN,
+    cliente_id: id,
+    workout_item_id: wid,
+    nota_utente: nota
+  };
   const res = await fetch(API_BASE, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-    body: form.toString()
+    headers: { "Content-Type": "application/json;charset=UTF-8" },
+    body: JSON.stringify(payload)
   });
 
-  const json = await res.json().catch(() => null);
+  const text = await res.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch (err) {
+    throw new Error(`Risposta non JSON: ${text.slice(0, 200)}`);
+  }
+
   if (!res.ok || !json || !json.ok) {
     const err = (json && json.error) ? json.error : ("HTTP " + res.status);
     throw new Error(err);
