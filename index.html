@@ -72,7 +72,7 @@
       outline:none;
     }
     input:focus{border-color: var(--accent2)}
-    
+
     button{
       border:0;
       border-radius: 12px;
@@ -84,7 +84,7 @@
       transition: opacity 0.2s;
     }
     button:active{opacity: 0.8}
-    
+
     button.secondary{
       color: var(--text);
       background: rgba(96,165,250,.16);
@@ -104,7 +104,7 @@
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .row > *{flex:1}
     .row .fit{flex:0 0 auto}
-    
+
     .status{
       font-size:13px; color: var(--muted);
       margin-top:10px;
@@ -204,7 +204,7 @@
 
     <div id="status" class="status"></div>
     <div class="divider"></div>
-    <div class="small">Le note vengono salvate automaticamente in locale e inviate al database del PT.</div>
+    <div class="small">Le note vengono inviate al PT e salvate con data/ora.</div>
   </div>
 
   <div class="card">
@@ -236,22 +236,21 @@ function setStatus(msg, kind="") {
 
 function escapeHtml(str) {
   if(!str) return "";
-  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
-
-function localKey(wid) { return `v_note_${wid}`; }
 
 /*** API ***/
 async function fetchScheda(id, sett) {
-  const url = `${API_BASE}?action=scheda&token=${TOKEN}&cliente_id=${id}&settimana=${sett}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Errore di rete");
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || "Errore sconosciuto");
+  const url = `${API_BASE}?action=scheda&token=${encodeURIComponent(TOKEN)}&cliente_id=${encodeURIComponent(id)}&settimana=${encodeURIComponent(sett)}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Errore di rete (GET)");
+  const json = await res.json().catch(() => null);
+  if (!json || !json.ok) throw new Error((json && json.error) ? json.error : "Risposta non valida");
   return json.rows || [];
 }
 
 async function postNota(id, wid, nota) {
+  // invio come form-urlencoded: è la cosa più compatibile e stabile con Apps Script
   const form = new URLSearchParams();
   form.set("token", TOKEN);
   form.set("cliente_id", id);
@@ -264,18 +263,11 @@ async function postNota(id, wid, nota) {
     body: form.toString()
   });
 
-  let json = null;
-  try {
-    json = await res.json();
-  } catch(e) {
-    throw new Error("Risposta non valida dal server");
-  }
-
+  const json = await res.json().catch(() => null);
   if (!res.ok || !json || !json.ok) {
     const err = (json && json.error) ? json.error : ("HTTP " + res.status);
     throw new Error(err);
   }
-
   return true;
 }
 
@@ -283,7 +275,7 @@ async function postNota(id, wid, nota) {
 function renderAll() {
   const tabsEl = document.getElementById("tabs");
   const contentEl = document.getElementById("content");
-  
+
   const byDay = {};
   state.rows.forEach(r => {
     const d = (r.giorno || "VARIE").trim().toUpperCase();
@@ -297,16 +289,31 @@ function renderAll() {
     return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
   });
 
+  if (!days.length) {
+    tabsEl.innerHTML = "";
+    contentEl.innerHTML = `<div class="small">Nessun esercizio trovato. Controlla Cliente ID e Settimana.</div>`;
+    return;
+  }
+
   if (!state.activeDay || !byDay[state.activeDay]) state.activeDay = days[0];
 
   tabsEl.innerHTML = days.map(d => `
-    <button class="tab ${d === state.activeDay ? 'active' : ''}" onclick="switchDay('${d}')">${d}</button>
-  `).join('');
+    <button class="tab ${d === state.activeDay ? 'active' : ''}" data-day="${d}">${d}</button>
+  `).join("");
+
+  // bind tabs
+  tabsEl.querySelectorAll("button[data-day]").forEach(btn => {
+    btn.onclick = () => {
+      state.activeDay = btn.getAttribute("data-day");
+      renderAll();
+    };
+  });
 
   const currentRows = byDay[state.activeDay] || [];
+
   contentEl.innerHTML = currentRows.map(r => {
     const wid = r.workout_item_id;
-    const localNote = localStorage.getItem(localKey(wid)) || "";
+
     return `
       <div class="exercise">
         <div class="ex-title">
@@ -314,93 +321,86 @@ function renderAll() {
           <span class="pill">ORDINE: ${r.ordine || 0}</span>
         </div>
         <div class="meta">
-          <span class="pill">Set: ${r.serie || '-'}</span>
-          <span class="pill">Rip: ${r.ripetizioni || '-'}</span>
-          <span class="pill">Rec: ${r.recupero_sec || '0'}s</span>
+          <span class="pill">Set: ${escapeHtml(r.serie || '-')}</span>
+          <span class="pill">Rip: ${escapeHtml(r.ripetizioni || '-')}</span>
+          <span class="pill">Rec: ${escapeHtml(r.recupero_sec || '0')}s</span>
         </div>
         ${r.note_pt ? `<div class="small" style="margin-top:8px; color:var(--accent2)">Note PT: ${escapeHtml(r.note_pt)}</div>` : ''}
-        
-        <textarea id="t_${wid}" placeholder="Scrivi qui i pesi usati o sensazioni...">${escapeHtml(localNote)}</textarea>
-        
+
+        <!-- CAMPO SEMPRE VUOTO ALL’APERTURA -->
+        <textarea id="t_${wid}" placeholder="Scrivi qui i pesi usati o sensazioni..."></textarea>
+
         <div class="btnbar">
-          <button onclick="handleSave('${wid}', true)">Invia al PT</button>
-          <button class="ghost" onclick="handleSave('${wid}', false)">Solo locale</button>
-          <button class="danger" onclick="handleClear('${wid}')">X</button>
+          <button class="send" data-wid="${wid}">Invia al PT</button>
+          <button class="danger clear" data-wid="${wid}">Pulisci</button>
           <span id="s_${wid}" class="small"></span>
         </div>
       </div>
     `;
-  }).join('');
-}
+  }).join("");
 
-window.switchDay = (day) => {
-  state.activeDay = day;
-  renderAll();
-};
+  // bind buttons
+  contentEl.querySelectorAll("button.send").forEach(btn => {
+    btn.onclick = () => handleSave(btn.getAttribute("data-wid"));
+  });
+  contentEl.querySelectorAll("button.clear").forEach(btn => {
+    btn.onclick = () => handleClear(btn.getAttribute("data-wid"));
+  });
+}
 
 /*** ACTIONS ***/
 async function handleLoad() {
   const id = document.getElementById("clienteId").value.trim();
   const sett = document.getElementById("settimana").value.trim();
-  if(!id || !sett) return setStatus("Inserisci i dati", "err");
+  if(!id || !sett) return setStatus("Inserisci Cliente ID e Settimana", "err");
 
   setStatus("Caricamento...");
   try {
     state.rows = await fetchScheda(id, sett);
     state.cliente_id = id;
     state.settimana = sett;
+    state.activeDay = null;
     setStatus(`Caricati ${state.rows.length} esercizi`, "ok");
     renderAll();
   } catch(e) {
-    console.error(e);
-    setStatus(e.message, "err");
+    setStatus(escapeHtml(e.message || String(e)), "err");
   }
 }
 
-async function handleSave(wid, send) {
-  const txt = document.getElementById("t_"+wid);
-  if (!txt) return;
-  const nota = txt.value.trim();
+async function handleSave(wid) {
+  const nota = document.getElementById("t_"+wid).value.trim();
   const status = document.getElementById("s_"+wid);
-  
-  localStorage.setItem(localKey(wid), nota);
-  status.innerHTML = "Salvato locale";
 
-  if (send) {
-    if (!state.cliente_id) {
-      status.innerHTML = "Carica prima la scheda";
-      return;
-    }
-    status.innerHTML = "Invio...";
-    try {
-      await postNota(state.cliente_id, wid, nota);
-      status.innerHTML = "Inviato al PT ✔";
-    } catch(e) {
-      console.error(e);
-      status.innerHTML = "Errore invio";
-    }
+  if (!nota) {
+    status.innerHTML = `<span class="err">Scrivi qualcosa prima di inviare.</span>`;
+    return;
+  }
+
+  status.innerHTML = "Invio...";
+  try {
+    await postNota(state.cliente_id, wid, nota);
+    status.innerHTML = `<span class="ok">Inviato al PT ✔</span>`;
+    // dopo invio: svuota campo (UX “nota di oggi”)
+    document.getElementById("t_"+wid).value = "";
+  } catch(e) {
+    status.innerHTML = `<span class="err">Errore invio: ${escapeHtml(e.message || String(e))}</span>`;
   }
 }
 
 function handleClear(wid) {
-  if(confirm("Cancello la nota?")) {
-    localStorage.removeItem(localKey(wid));
-    const t = document.getElementById("t_"+wid);
-    if (t) t.value = "";
-    const s = document.getElementById("s_"+wid);
-    if (s) s.innerHTML = "";
-  }
+  document.getElementById("t_"+wid).value = "";
+  document.getElementById("s_"+wid).innerHTML = "";
 }
 
 document.getElementById("loadBtn").onclick = handleLoad;
 document.getElementById("refreshBtn").onclick = handleLoad;
 
-// Inizializzazione Manifest
+// Manifest inline
 const manifest = {
   name: "Virtus Allenamento",
   short_name: "Virtus",
   display: "standalone",
-  start_url: "/",
+  start_url: "./",
   background_color: "#0b1220",
   theme_color: "#111827"
 };
